@@ -199,12 +199,12 @@ bool debugData;
 
 void debugOn() {
     debugData = true;
-    Serial.println("Camera debug data is enabled (send 'd' for status dump, or any other char to disable debug)");
+    // Serial.println("Camera debug data is enabled (send 'd' for status dump, or any other char to disable debug)");
 }
 
 void debugOff() {
     debugData = false;
-    Serial.println("Camera debug data is disabled (send 'd' for status dump, or any other char to enable debug)");
+    // Serial.println("Camera debug data is disabled (send 'd' for status dump, or any other char to enable debug)");
 }
 
 // Serial input (debugging controls)
@@ -232,28 +232,37 @@ void flashLED(int flashtime) {
 #endif
 }
 
+int elegooStatus() {
+    return digitalRead(GPIO_NUM_13);
+}
+
+int toggleElegoo() {
+    digitalWrite(GPIO_NUM_13, !elegooStatus());
+    return elegooStatus();
+}
+
 // Lamp Control
 void setLamp(int newVal) {
     if (newVal != -1) {
         // Apply a logarithmic function to the scale.
         int brightness = round((pow(2,(1+(newVal*0.02)))-2)/6*pwmMax);
         ledcWrite(lampChannel, brightness);
-        Serial.print("Lamp: ");
-        Serial.print(newVal);
-        Serial.print("%, pwm = ");
-        Serial.println(brightness);
+        // Serial.print("Lamp: ");
+        // Serial.print(newVal);
+        // Serial.print("%, pwm = ");
+        // Serial.println(brightness);
     }
 }
 
 void printLocalTime(bool extraData=false) {
     struct tm timeinfo;
     if(!getLocalTime(&timeinfo)){
-        Serial.println("Failed to obtain time");
+        // Serial.println("Failed to obtain time");
     } else {
-        Serial.println(&timeinfo, "%H:%M:%S, %A, %B %d %Y");
+        // Serial.println(&timeinfo, "%H:%M:%S, %A, %B %d %Y");
     }
     if (extraData) {
-        Serial.printf("NTP Server: %s, GMT Offset: %li(s), DST Offset: %i(s)\r\n", ntpServer, gmtOffset_sec, daylightOffset_sec);
+        // Serial.printf("NTP Server: %s, GMT Offset: %li(s), DST Offset: %i(s)\r\n", ntpServer, gmtOffset_sec, daylightOffset_sec);
     }
 }
 
@@ -262,22 +271,24 @@ void WifiSetup() {
     flashLED(300);
     delay(100);
     flashLED(300);
-    Serial.println("Starting WiFi");
+    // Serial.println("Starting WiFi");
 
     // Disable power saving on WiFi to improve responsiveness 
     // (https://github.com/espressif/arduino-esp32/issues/1484)
     WiFi.setSleep(false);
 
-    Serial.print("Known external SSIDs: ");
+    // Serial.print("Known external SSIDs: ");
     if (stationCount > firstStation) {
-        for (int i=firstStation; i < stationCount; i++) Serial.printf(" '%s'", stationList[i].ssid);
+        for (int i=firstStation; i < stationCount; i++) { 
+            // Serial.printf(" '%s'", stationList[i].ssid); 
+        }
     } else {
-        Serial.print("None");
+        // Serial.print("None");
     }
-    Serial.println();
+    // Serial.println();
     byte mac[6] = {0,0,0,0,0,0};
     WiFi.macAddress(mac);
-    Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // Serial.printf("MAC address: %02X:%02X:%02X:%02X:%02X:%02X\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     
     int bestStation = -1;
     long bestRSSI = -1024;
@@ -285,21 +296,21 @@ void WifiSetup() {
     uint8_t bestBSSID[6];
     if (stationCount > firstStation) {
         // We have a list to scan 
-        Serial.printf("Scanning local Wifi Networks\r\n");
+        // Serial.printf("Scanning local Wifi Networks\r\n");
         int stationsFound = WiFi.scanNetworks();
-        Serial.printf("%i networks found\r\n", stationsFound);
+        // Serial.printf("%i networks found\r\n", stationsFound);
         if (stationsFound > 0) {
             for (int i = 0; i < stationsFound; ++i) {
                 // Print SSID and RSSI for each network found
                 String thisSSID = WiFi.SSID(i);
                 int thisRSSI = WiFi.RSSI(i);
                 String thisBSSID = WiFi.BSSIDstr(i);
-                Serial.printf("%3i : [%s] %s (%i)", i + 1, thisBSSID.c_str(), thisSSID.c_str(), thisRSSI);
+                // Serial.printf("%3i : [%s] %s (%i)", i + 1, thisBSSID.c_str(), thisSSID.c_str(), thisRSSI);
                 // Scan our list of known external stations
                 for (int sta = firstStation; sta < stationCount; sta++) {
                     if ((strcmp(stationList[sta].ssid, thisSSID.c_str()) == 0) || 
                     (strcmp(stationList[sta].ssid, thisBSSID.c_str()) == 0)) {
-                        Serial.print("  -  Known!");
+                        // Serial.print("  -  Known!");
                         // Chose the strongest RSSI seen
                         if (thisRSSI > bestRSSI) {
                             bestStation = sta;
@@ -310,7 +321,7 @@ void WifiSetup() {
                         }
                     }
                 }
-                Serial.println();
+                // Serial.println();
             }
         }
     } else {
@@ -321,22 +332,20 @@ void WifiSetup() {
     if (bestStation == -1) {
         if (!accesspoint) { 
             #if defined(WIFI_AP_ENABLE)
-                Serial.println("No known networks found, entering AccessPoint fallback mode");
+                // Serial.println("No known networks found, entering AccessPoint fallback mode");
                 accesspoint = true;
             #else
-                Serial.println("No known networks found");
+                // Serial.println("No known networks found");
             #endif
         } else {
-            Serial.println("AccessPoint mode selected in config");
+            // Serial.println("AccessPoint mode selected in config");
         }
     } else {
-        Serial.printf("Connecting to Wifi Network %d: [%02X:%02X:%02X:%02X:%02X:%02X] %s \r\n", 
-                       bestStation, bestBSSID[0], bestBSSID[1], bestBSSID[2], bestBSSID[3], 
-                       bestBSSID[4], bestBSSID[5], bestSSID);
+        // Serial.printf("Connecting to Wifi Network %d: [%02X:%02X:%02X:%02X:%02X:%02X] %s \r\n", bestStation, bestBSSID[0], bestBSSID[1], bestBSSID[2], bestBSSID[3], bestBSSID[4], bestBSSID[5], bestSSID);
         // Apply static settings if necesscary
         if (stationList[bestStation].dhcp == false) {
             #if defined(ST_IP)
-                Serial.println("Applying static IP settings");
+                // Serial.println("Applying static IP settings");
                 #if !defined (ST_GATEWAY)  || !defined (ST_NETMASK) 
                     #error "You must supply both Gateway and NetMask when specifying a static IP address"
                 #endif
@@ -355,7 +364,7 @@ void WifiSetup() {
                 #endif
                 #endif
             #else
-                Serial.println("Static IP settings requested but not defined in config, falling back to dhcp");
+                // Serial.println("Static IP settings requested but not defined in config, falling back to dhcp");
             #endif
         }
 
@@ -370,26 +379,26 @@ void WifiSetup() {
         unsigned long start = millis(); 
         while ((millis() - start <= WIFI_WATCHDOG) && (WiFi.status() != WL_CONNECTED)) {
             delay(500);
-            Serial.print('.');
+            // Serial.print('.');
         }
         // If we have connected, inform user
         if (WiFi.status() == WL_CONNECTED) {
-            Serial.println("Client connection succeeded");
+            // Serial.println("Client connection succeeded");
             accesspoint = false;
             // Note IP details
             ip = WiFi.localIP();
             net = WiFi.subnetMask();
             gw = WiFi.gatewayIP();
-            Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
-            Serial.printf("Netmask   : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
-            Serial.printf("Gateway   : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
+            // Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+            // Serial.printf("Netmask   : %d.%d.%d.%d\r\n",net[0],net[1],net[2],net[3]);
+            // Serial.printf("Gateway   : %d.%d.%d.%d\r\n",gw[0],gw[1],gw[2],gw[3]);
             // Flash the LED to show we are connected
             for (int i = 0; i < 5; i++) {
                 flashLED(50);
                 delay(150);
             }
         } else {
-            Serial.println("Client connection Failed");
+            // Serial.println("Client connection Failed");
             WiFi.disconnect();   // (resets the WiFi scan)
         }
     }
@@ -397,20 +406,20 @@ void WifiSetup() {
     if (accesspoint && (WiFi.status() != WL_CONNECTED)) {
         // The accesspoint has been enabled, and we have not connected to any existing networks
         #if defined(AP_CHAN)
-            Serial.println("Setting up Fixed Channel AccessPoint");
-            Serial.print("  SSID     : ");
-            Serial.println(stationList[0].ssid);
-            Serial.print("  Password : ");
-            Serial.println(stationList[0].password);
-            Serial.print("  Channel  : ");
-            Serial.println(AP_CHAN);
+            // Serial.println("Setting up Fixed Channel AccessPoint");
+            // Serial.print("  SSID     : ");
+            // Serial.println(stationList[0].ssid);
+            // Serial.print("  Password : ");
+            // Serial.println(stationList[0].password);
+            // Serial.print("  Channel  : ");
+            // Serial.println(AP_CHAN);
             WiFi.softAP(stationList[0].ssid, stationList[0].password, AP_CHAN);
         # else
-            Serial.println("Setting up AccessPoint");
-            Serial.print("  SSID     : ");
-            Serial.println(stationList[0].ssid);
-            Serial.print("  Password : ");
-            Serial.println(stationList[0].password);
+            // Serial.println("Setting up AccessPoint");
+            // Serial.print("  SSID     : ");
+            // Serial.println(stationList[0].ssid);
+            // Serial.print("  Password : ");
+            // Serial.println(stationList[0].password);
             WiFi.softAP(stationList[0].ssid, stationList[0].password);
         #endif
         #if defined(AP_ADDRESS)
@@ -427,7 +436,7 @@ void WifiSetup() {
         net = WiFi.subnetMask();
         gw = WiFi.gatewayIP();
         strcpy(apName, stationList[0].ssid);
-        Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
+        // Serial.printf("IP address: %d.%d.%d.%d\r\n",ip[0],ip[1],ip[2],ip[3]);
         // Flash the LED to show we are connected
         for (int i = 0; i < 5; i++) {
             flashLED(150);
@@ -435,7 +444,7 @@ void WifiSetup() {
         }
         // Start the DNS captive portal if requested
         if (stationList[0].dhcp == true) {
-            Serial.println("Starting Captive Portal");
+            // Serial.println("Starting Captive Portal");
             dnsServer.start(DNS_PORT, "*", ip);
             captivePortal = true;
         }
@@ -447,19 +456,19 @@ void setup() {
     // See, for instance, https://esp32.com/viewtopic.php?t=3152
     Serial.begin(115200);
     Serial.setDebugOutput(true);
-    Serial.println();
-    Serial.println("====");
-    Serial.print("esp32-cam-webserver: ");
-    Serial.println(myName);
-    Serial.print("Code Built: ");
-    Serial.println(myVer);
-    Serial.print("Base Release: ");
-    Serial.println(baseVersion);
+    // Serial.println();
+    // Serial.println("====");
+    // Serial.print("esp32-cam-webserver: ");
+    // Serial.println(myName);
+    // Serial.print("Code Built: ");
+    // Serial.println(myVer);
+    // Serial.print("Base Release: ");
+    // Serial.println(baseVersion);
 
     if (stationCount == 0) {
-      Serial.println("\r\nFatal Error; Halting");
+      // Serial.println("\r\nFatal Error; Halting");
       while (true) {
-       Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
+       // Serial.println("No wifi details have been configured; we cannot connect to existing WiFi or start our own AccessPoint, there is no point in proceeding.");
        delay(5000); 
       }
     }
@@ -468,6 +477,11 @@ void setup() {
         pinMode(LED_PIN, OUTPUT);
         digitalWrite(LED_PIN, LED_ON);
     #endif
+
+    // Relay connected to GPIO13. Active LOW. Elegoo will start on boot
+    pinMode(GPIO_NUM_13, OUTPUT);
+    digitalWrite(GPIO_NUM_13, LOW);
+
 
     // Create camera config structure; and populate with hardware and other defaults 
     camera_config_t config;
@@ -511,9 +525,9 @@ void setup() {
     esp_err_t err = esp_camera_init(&config);
     if (err != ESP_OK) {
         delay(100);  // need a delay here or the next serial o/p gets missed
-        Serial.printf("\r\n\r\nCRITICAL FAILURE: Camera sensor failed to initialise.\r\n\r\n");
-        Serial.printf("A full (hard, power off/on) reboot will probably be needed to recover from this.\r\n");
-        Serial.printf("Meanwhile; this unit will reboot in 1 minute since these errors sometime clear automatically\r\n");
+        // Serial.printf("\r\n\r\nCRITICAL FAILURE: Camera sensor failed to initialise.\r\n\r\n");
+        // Serial.printf("A full (hard, power off/on) reboot will probably be needed to recover from this.\r\n");
+        // Serial.printf("Meanwhile; this unit will reboot in 1 minute since these errors sometime clear automatically\r\n");
         // Reset the I2C bus.. may help when rebooting.
         periph_module_disable(PERIPH_I2C0_MODULE); // try to shut I2C down properly in case that is the problem
         periph_module_disable(PERIPH_I2C1_MODULE);
@@ -526,19 +540,19 @@ void setup() {
         esp_task_wdt_init(60,true);
         esp_task_wdt_add(NULL);        
     } else {
-        Serial.println("Camera init succeeded");
+        // Serial.println("Camera init succeeded");
 
         // Get a reference to the sensor
         sensor_t * s = esp_camera_sensor_get();
 
         // Dump camera module, warn for unsupported modules.
-        switch (s->id.PID) {
-            case OV9650_PID: Serial.println("WARNING: OV9650 camera module is not properly supported, will fallback to OV2640 operation"); break;
-            case OV7725_PID: Serial.println("WARNING: OV7725 camera module is not properly supported, will fallback to OV2640 operation"); break;
-            case OV2640_PID: Serial.println("OV2640 camera module detected"); break;
-            case OV3660_PID: Serial.println("OV3660 camera module detected"); break;
-            default: Serial.println("WARNING: Camera module is unknown and not properly supported, will fallback to OV2640 operation");
-        }
+        // switch (s->id.PID) {
+        //     case OV9650_PID: // Serial.println("WARNING: OV9650 camera module is not properly supported, will fallback to OV2640 operation"); break;
+        //     case OV7725_PID: // Serial.println("WARNING: OV7725 camera module is not properly supported, will fallback to OV2640 operation"); break;
+        //     case OV2640_PID: // Serial.println("OV2640 camera module detected"); break;
+        //     case OV3660_PID: // Serial.println("OV3660 camera module detected"); break;
+        //     //default: // Serial.println("WARNING: Camera module is unknown and not properly supported, will fallback to OV2640 operation");
+        // }
 
         // OV3660 initial sensors are flipped vertically and colors are a bit saturated
         if (s->id.PID == OV3660_PID) {
@@ -608,7 +622,7 @@ void setup() {
             filesystemStart();
             loadPrefs(SPIFFS);
         } else {
-            Serial.println("No Internal Filesystem, cannot save preferences");
+            // Serial.println("No Internal Filesystem, cannot save preferences");
         }
     }
 
@@ -623,7 +637,7 @@ void setup() {
         else setLamp(lampVal);
         ledcAttachPin(LAMP_PIN, lampChannel);            // attach the GPIO pin to the channel
     } else {
-        Serial.println("No lamp, or lamp disabled in config");
+        // Serial.println("No lamp, or lamp disabled in config");
     }
 
     // Having got this far; start Wifi and loop until we are connected or have started an AccessPoint
@@ -634,7 +648,7 @@ void setup() {
 
     if (otaEnabled) {
         // Start OTA once connected
-        Serial.println("Setting up OTA");
+        // Serial.println("Setting up OTA");
         // Port defaults to 3232
         // ArduinoOTA.setPort(3232); 
         // Hostname defaults to esp3232-[MAC]
@@ -642,7 +656,7 @@ void setup() {
         // No authentication by default
         #if defined (OTA_PASSWORD)
             ArduinoOTA.setPassword(OTA_PASSWORD);
-            Serial.printf("OTA Password: %s\n\r", OTA_PASSWORD);
+            // Serial.printf("OTA Password: %s\n\r", OTA_PASSWORD);
         #endif
         ArduinoOTA
             .onStart([]() {
@@ -652,34 +666,44 @@ void setup() {
               else // U_SPIFFS
                 type = "filesystem";
               // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-              Serial.println("Start updating " + type);
+              // Serial.println("Start updating " + type);
             })
             .onEnd([]() {
-              Serial.println("\nEnd");
+              // Serial.println("\nEnd");
             })
             .onProgress([](unsigned int progress, unsigned int total) {
-              Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+              // Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
             })
             .onError([](ota_error_t error) {
-              Serial.printf("Error[%u]: ", error);
-              if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-              else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-              else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-              else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-              else if (error == OTA_END_ERROR) Serial.println("End Failed");
+              // Serial.printf("Error[%u]: ", error);
+              if (error == OTA_AUTH_ERROR) {
+                  // Serial.println("Auth Failed");
+              }
+              else if (error == OTA_BEGIN_ERROR) {
+                  // Serial.println("Begin Failed");
+              }
+              else if (error == OTA_CONNECT_ERROR) {
+                  // Serial.println("Connect Failed");
+              }
+              else if (error == OTA_RECEIVE_ERROR) {
+                  // Serial.println("Receive Failed");
+              }
+              else if (error == OTA_END_ERROR) {
+                  // Serial.println("End Failed");
+              }
             });
         ArduinoOTA.begin();
     } else {
-        Serial.println("OTA is disabled");
+        // Serial.println("OTA is disabled");
     }
 
     // Set time via NTP server when enabled
     if (haveTime) {
-        Serial.print("Time: ");
+        // Serial.print("Time: ");
         configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
         printLocalTime(true);
     } else {
-        Serial.println("Time functions disabled");
+        // Serial.println("Time functions disabled");
     }
 
     // Now we have a network we can start the two http handlers for the UI and Stream.
@@ -701,16 +725,16 @@ void setup() {
         sprintf(streamURL, "http://%d.%d.%d.%d:%d/", ip[0], ip[1], ip[2], ip[3], streamPort);
     #endif
     if (critERR.length() == 0) {
-        Serial.printf("\r\nCamera Ready!\r\nUse '%s' to connect\r\n", httpURL);
-        Serial.printf("Stream viewer available at '%sview'\r\n", streamURL);
-        Serial.printf("Raw stream URL is '%s'\r\n", streamURL);
+        // Serial.printf("\r\nCamera Ready!\r\nUse '%s' to connect\r\n", httpURL);
+        // Serial.printf("Stream viewer available at '%sview'\r\n", streamURL);
+        // Serial.printf("Raw stream URL is '%s'\r\n", streamURL);
         #if defined(DEBUG_DEFAULT_ON)
             debugOn();
         #else
             debugOff();
         #endif
     } else {
-        Serial.printf("\r\nCamera unavailable due to initialisation errors.\r\n\r\n");
+        // Serial.printf("\r\nCamera unavailable due to initialisation errors.\r\n\r\n");
     }
 
     // Used when dumping status; these are slow functions, so just do them once during startup
@@ -723,12 +747,12 @@ void setup() {
 
     // Warn if no PSRAM is detected (typically user error with board selection in the IDE)
     if(!psramFound()){
-        Serial.printf("\r\nNo PSRAM found.\r\nPlease check the board config for your module.\r\n");
-        Serial.printf("High resolution/quality images & streams will show incomplete frames due to low memory.\r\n");
+        // Serial.printf("\r\nNo PSRAM found.\r\nPlease check the board config for your module.\r\n");
+        // Serial.printf("High resolution/quality images & streams will show incomplete frames due to low memory.\r\n");
     }
 
     // While in Beta; Warn!
-    Serial.print("\r\nThis is the 4.0 alpha\r\n - Face detection has been removed!\r\n");
+    // Serial.print("\r\nThis is the 4.0 alpha\r\n - Face detection has been removed!\r\n");
 }
 
 void loop() {
@@ -754,7 +778,7 @@ void loop() {
             // We are connected, wait a bit and re-check
             if (warned) {
                 // Tell the user if we have just reconnected 
-                Serial.println("WiFi reconnected");
+                // Serial.println("WiFi reconnected");
                 warned = false;
             }
             // loop here for WIFI_WATCHDOG, turning debugData true/false depending on serial input..
@@ -769,7 +793,7 @@ void loop() {
             if (!warned) {
                 // Tell the user if we just disconnected
                 WiFi.disconnect();  // ensures disconnect is complete, wifi scan cleared
-                Serial.println("WiFi disconnected, retrying");
+                // Serial.println("WiFi disconnected, retrying");
                 warned = true;
             }
             WifiSetup();

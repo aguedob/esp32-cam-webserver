@@ -32,6 +32,8 @@
 extern void flashLED(int flashtime);
 extern void setLamp(int newVal);
 extern void printLocalTime(bool extraData);
+extern int toggleElegoo();
+extern int elegooStatus();
 
 // External variables declared in the main .ino
 extern char myName[];
@@ -472,6 +474,69 @@ static esp_err_t logo_svg_handler(httpd_req_t *req){
     return httpd_resp_send(req, (const char *)logo_svg, logo_svg_len);
 }
 
+static esp_err_t forward_handler(httpd_req_t *req){
+    Serial.println(";adelante;");
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t stop_handler(httpd_req_t *req){
+    Serial.println(";parar;");
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t left_handler(httpd_req_t *req){
+    Serial.println(";izquierda;");
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t right_handler(httpd_req_t *req){
+    Serial.println(";derecha;");
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t back_handler(httpd_req_t *req){
+    Serial.println(";atras;");
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t toggle_elegoo_handler(httpd_req_t *req){
+
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    int status = toggleElegoo();
+    itoa(status, json_response, 10);
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t elegoo_status_handler(httpd_req_t *req){
+
+    static char json_response[10];
+    httpd_resp_set_type(req, "text/html");
+    httpd_resp_set_hdr(req, "Content-Encoding", "identity");
+    int status = elegooStatus();
+    itoa(status, json_response, 10);
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+
+
+
 static esp_err_t dump_handler(httpd_req_t *req){
     flashLED(75);
     Serial.println("\r\nDump Requested via Web");
@@ -670,7 +735,7 @@ static esp_err_t index_handler(httpd_req_t *req){
 
 void startCameraServer(int hPort, int sPort){
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 12; // we use more than the default 8 (on port 80)
+    config.max_uri_handlers = 20; // we use more than the default 8 (on port 80)
 
     httpd_uri_t index_uri = {
         .uri       = "/",
@@ -762,6 +827,51 @@ void startCameraServer(int hPort, int sPort){
         .handler   = error_handler,
         .user_ctx  = NULL
     };
+    httpd_uri_t forward_uri = {
+        .uri       = "/forward",
+        .method    = HTTP_GET,
+        .handler   = forward_handler,
+        .user_ctx  = NULL
+    };
+    httpd_uri_t stop_uri = {
+        .uri       = "/stop",
+        .method    = HTTP_GET,
+        .handler   = stop_handler,
+        .user_ctx  = NULL
+    };
+    httpd_uri_t left_uri = {
+        .uri       = "/left",
+        .method    = HTTP_GET,
+        .handler   = left_handler,
+        .user_ctx  = NULL
+    };
+    httpd_uri_t right_uri = {
+        .uri       = "/right",
+        .method    = HTTP_GET,
+        .handler   = right_handler,
+        .user_ctx  = NULL
+    };
+    httpd_uri_t back_uri = {
+        .uri       = "/back",
+        .method    = HTTP_GET,
+        .handler   = back_handler,
+        .user_ctx  = NULL
+    };
+
+    httpd_uri_t elegoo_status_uri = {
+        .uri       = "/elegooStatus",
+        .method    = HTTP_GET,
+        .handler   = elegoo_status_handler,
+        .user_ctx  = NULL
+    };
+
+    httpd_uri_t toggle_elegoo_uri = {
+        .uri       = "/toggleElegoo",
+        .method    = HTTP_GET,
+        .handler   = toggle_elegoo_handler,
+        .user_ctx  = NULL
+    };
+
 
     // Request Handlers; config.max_uri_handlers (above) must be >= the number of handlers
     config.server_port = hPort;
@@ -782,6 +892,13 @@ void startCameraServer(int hPort, int sPort){
         httpd_register_uri_handler(camera_httpd, &favicon_ico_uri);
         httpd_register_uri_handler(camera_httpd, &logo_svg_uri);
         httpd_register_uri_handler(camera_httpd, &dump_uri);
+        httpd_register_uri_handler(camera_httpd, &forward_uri);
+        httpd_register_uri_handler(camera_httpd, &back_uri);
+        httpd_register_uri_handler(camera_httpd, &stop_uri);
+        httpd_register_uri_handler(camera_httpd, &left_uri);
+        httpd_register_uri_handler(camera_httpd, &right_uri);
+        httpd_register_uri_handler(camera_httpd, &elegoo_status_uri);
+        httpd_register_uri_handler(camera_httpd, &toggle_elegoo_uri);
     }
 
     config.server_port = sPort;

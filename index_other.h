@@ -22,7 +22,14 @@ const uint8_t index_simple_html[] = R"=====(<!doctype html>
         <label for="nav-toggle-cb" id="nav-toggle" style="float:left;" title="Settings">&#9776;&nbsp;</label>
         <button id="swap-viewer" style="float:left;" title="Swap to full feature viewer">Full</button>
         <button id="get-still" style="float:left;">Get Still</button>
+        <button id="go-forward" style="float:left;">Forward</button>
+        <button id="go-back" style="float:left;">Back</button>
+        <button id="go-left" style="float:left;">Left</button>
+        <button id="go-right" style="float:left;">Right</button>
+        <button id="go-stop" style="float:left;">Stop</button>
+        <button id="toggle-elegoo" style="float:left;">Power off Elegoo</button>
         <button id="toggle-stream" style="float:left;" class="hidden">Start Stream</button>
+
         <div id="wait-settings" style="float:left;" class="loader" title="Waiting for camera settings to load"></div>
       </div>
       <div id="content">
@@ -81,7 +88,13 @@ const uint8_t index_simple_html[] = R"=====(<!doctype html>
     const view = document.getElementById('stream')
     const viewContainer = document.getElementById('stream-container')
     const stillButton = document.getElementById('get-still')
+    const goForward = document.getElementById('go-forward')
+    const goBack = document.getElementById('go-back')
+    const goLeft = document.getElementById('go-left')
+    const goRight = document.getElementById('go-right')
+    const goStop = document.getElementById('go-stop')
     const streamButton = document.getElementById('toggle-stream')
+    const toggleElegooButton = document.getElementById('toggle-elegoo')
     const closeButton = document.getElementById('close-stream')
     const swapButton = document.getElementById('swap-viewer')
 
@@ -236,6 +249,65 @@ const uint8_t index_simple_html[] = R"=====(<!doctype html>
       view.src = `${baseHost}/capture?_cb=${Date.now()}`;
       view.scrollIntoView(false);
       show(viewContainer);
+    }
+
+    toggleElegooButton.onclick = () => {
+      fetch(`${baseHost}/toggleElegoo`)     
+        .then(function (response) {
+          return response.json()
+      })
+    }
+
+    goForward.onclick = () => {
+      fetch(`${baseHost}/forward`)
+        .then(function (response) {
+          setTimeout(function() {
+            fetch(`${baseHost}/stop`)
+              .then(function (response) {
+                return response.json()
+            })
+          }, 350);
+      })
+    }
+
+
+    goBack.onclick = () => {
+      fetch(`${baseHost}/back`)
+        .then(function (response) {
+          setTimeout(function() {
+            fetch(`${baseHost}/stop`)
+              .then(function (response) {
+                return response.json()
+            })
+          }, 350);
+      })
+    }
+
+    goLeft.onclick = () => {
+      fetch(`${baseHost}/left`)
+        .then(function (response) {
+          fetch(`${baseHost}/stop`)
+            .then(function (response) {
+              return response.json()
+          })
+      })
+    }
+
+    goRight.onclick = () => {
+      fetch(`${baseHost}/right`)
+        .then(function (response) {
+          fetch(`${baseHost}/stop`)
+            .then(function (response) {
+              return response.json()
+          })
+      })
+    }
+
+    goStop.onclick = () => {
+      fetch(`${baseHost}/stop`)
+        .then(function (response) {
+          return response.json()
+      })
     }
 
     closeButton.onclick = () => {
